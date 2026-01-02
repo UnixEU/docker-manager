@@ -2,7 +2,7 @@
 
 A modern, full-featured Docker management application with a beautiful GUI for DevOps Infrastructure Specialists. Manage your Docker containers, images, networks, and volumes through an intuitive web interface.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 
 ## 🚀 Features
