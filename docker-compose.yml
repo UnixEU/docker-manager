@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: docker-manager-postgres
+    environment:
+      POSTGRES_USER: dockermanager
+      POSTGRES_PASSWORD: dockermanager
+      POSTGRES_DB: dockermanager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - docker-manager-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dockermanager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: docker-manager-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - docker-manager-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: docker-manager-backend
+    environment:
+      POSTGRES_USER: dockermanager
+      POSTGRES_PASSWORD: dockermanager
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: dockermanager
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount Docker socket
+    networks:
+      - docker-manager-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: docker-manager-frontend
+    ports:
+      - "80:80"
+    networks:
+      - docker-manager-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  docker-manager-network:
+    driver: bridge
